@@ -126,9 +126,11 @@ export const LuckyDraw: React.FC = () => {
         <div className="flex flex-col items-center justify-center min-h-screen p-8 relative z-10">
             {/* Header */}
             <div className="absolute top-8 left-8">
-                <h1 className="text-3xl font-bold text-white tracking-wider uppercase">
-                    <span className="text-primary">Lalasweet</span> <span className="text-secondary">Lucky Draw</span>
-                </h1>
+                <img
+                    src="/lalasweet-logo.png"
+                    alt="Lalasweet"
+                    className="h-12 w-auto"
+                />
             </div>
 
             {/* History Sidebar */}
