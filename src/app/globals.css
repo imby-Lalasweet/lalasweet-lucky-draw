@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  --background: #050510;
+  --foreground: #ffffff;
+  --primary: #00f0ff; /* Neon Blue */
+  --secondary: #ff00aa; /* Neon Pink */
+  --accent: #ffd700; /* Gold */
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  overflow: hidden; /* Prevent scrolling during game */
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary);
+  }
+  .text-glow-pink {
+    text-shadow: 0 0 10px var(--secondary), 0 0 20px var(--secondary);
+  }
+  .text-glow-gold {
+    text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+  }
+}
