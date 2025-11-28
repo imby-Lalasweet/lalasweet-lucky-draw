@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { NumberDisplay } from './NumberDisplay';
+import { NumberDisplay, animationClasses } from './NumberDisplay';
 import confetti from 'canvas-confetti';
 import { Trophy, RefreshCw, Play, Square } from 'lucide-react';
-import { playTickSound, playWinSound } from '@/utils/sound';
+import { playTickSound, playWinSound, increaseTension, resetTension } from '@/utils/sound';
 
 const MIN_NUMBER = 1;
 const MAX_NUMBER = 100;
@@ -14,13 +14,20 @@ export const LuckyDraw: React.FC = () => {
     const [isSpinning, setIsSpinning] = useState(false);
     const [winners, setWinners] = useState<number[]>([]);
     const [targetNumber, setTargetNumber] = useState<number | null>(null);
+    const [currentAnimation, setCurrentAnimation] = useState<string>('animate-pulse-scale');
+    const [screenShake, setScreenShake] = useState(false);
 
     const animationRef = useRef<number | null>(null);
     const speedRef = useRef<number>(50); // Interval in ms
     const lastUpdateRef = useRef<number>(0);
+    const tensionRef = useRef<number>(0);
 
     const generateRandomNumber = () => {
         return Math.floor(Math.random() * (MAX_NUMBER - MIN_NUMBER + 1)) + MIN_NUMBER;
+    };
+
+    const getRandomAnimation = () => {
+        return animationClasses[Math.floor(Math.random() * animationClasses.length)];
     };
 
     const spin = () => {
@@ -34,13 +41,30 @@ export const LuckyDraw: React.FC = () => {
 
         setIsSpinning(true);
         setTargetNumber(null);
-        speedRef.current = 50; // Start fast
+        setScreenShake(true);
+        speedRef.current = 30; // Start faster
+        tensionRef.current = 0;
+        resetTension();
+
+        // Pick a random animation for this spin
+        setCurrentAnimation(getRandomAnimation());
 
         const animate = (time: number) => {
             if (time - lastUpdateRef.current > speedRef.current) {
                 setCurrentNumber(generateRandomNumber());
-                playTickSound();
+
+                // Calculate intensity (0 to 1)
+                tensionRef.current += 0.01;
+                const intensity = Math.min(tensionRef.current, 1);
+
+                playTickSound(intensity);
+                increaseTension();
                 lastUpdateRef.current = time;
+
+                // Change animation occasionally for variety
+                if (Math.random() < 0.1) {
+                    setCurrentAnimation(getRandomAnimation());
+                }
             }
             animationRef.current = requestAnimationFrame(animate);
         };
@@ -61,25 +85,36 @@ export const LuckyDraw: React.FC = () => {
         // Slow down effect
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
-        let currentSpeed = 50;
-        const maxSpeed = 800; // Slowest speed before stop
-        const steps = 15; // Number of steps to slow down
+        let currentSpeed = 30;
+        const maxSpeed = 1000; // Slowest speed before stop
+        const steps = 20; // More steps for more tension
         let stepCount = 0;
 
         const slowDown = () => {
             setCurrentNumber(generateRandomNumber());
-            playTickSound();
+
+            // Calculate intensity (increases as we slow down)
+            const intensity = Math.min(stepCount / steps * 2, 2);
+            playTickSound(intensity);
+            increaseTension();
 
             stepCount++;
-            currentSpeed *= 1.2; // Exponential slow down
+            currentSpeed *= 1.25; // Exponential slow down
+
+            // Change animation as we slow down
+            if (stepCount % 3 === 0) {
+                setCurrentAnimation(getRandomAnimation());
+            }
 
             if (stepCount >= steps || currentSpeed > maxSpeed) {
                 // Final stop
                 setCurrentNumber(winner);
                 setIsSpinning(false);
+                setScreenShake(false);
                 setWinners(prev => [winner, ...prev]);
                 triggerConfetti();
                 playWinSound();
+                resetTension();
             } else {
                 setTimeout(slowDown, currentSpeed);
             }
@@ -89,23 +124,27 @@ export const LuckyDraw: React.FC = () => {
     };
 
     const triggerConfetti = () => {
-        const duration = 3000;
+        const duration = 4000;
         const end = Date.now() + duration;
 
         (function frame() {
             confetti({
-                particleCount: 5,
+                particleCount: 7,
                 angle: 60,
-                spread: 55,
+                spread: 70,
                 origin: { x: 0 },
-                colors: ['#00f0ff', '#ff00aa', '#ffd700']
+                colors: ['#00f0ff', '#ff00aa', '#ffd700'],
+                gravity: 1.2,
+                ticks: 300
             });
             confetti({
-                particleCount: 5,
+                particleCount: 7,
                 angle: 120,
-                spread: 55,
+                spread: 70,
                 origin: { x: 1 },
-                colors: ['#00f0ff', '#ff00aa', '#ffd700']
+                colors: ['#00f0ff', '#ff00aa', '#ffd700'],
+                gravity: 1.2,
+                ticks: 300
             });
 
             if (Date.now() < end) {
@@ -119,11 +158,13 @@ export const LuckyDraw: React.FC = () => {
             setWinners([]);
             setCurrentNumber(null);
             setIsSpinning(false);
+            setScreenShake(false);
+            resetTension();
         }
     };
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-8 relative z-10">
+        <div className={`flex flex-col items-center justify-center min-h-screen p-8 relative z-10 ${screenShake ? 'animate-screen-shake' : ''}`}>
             {/* Header */}
             <div className="absolute top-8 left-8">
                 <img
@@ -154,6 +195,7 @@ export const LuckyDraw: React.FC = () => {
                     number={currentNumber}
                     isSpinning={isSpinning}
                     isWinner={!isSpinning && targetNumber !== null && currentNumber === targetNumber}
+                    animationType={currentAnimation}
                 />
 
                 {/* Controls */}
@@ -171,7 +213,7 @@ export const LuckyDraw: React.FC = () => {
                     ) : (
                         <button
                             onClick={stop}
-                            className="group relative px-12 py-6 bg-secondary/20 hover:bg-secondary/30 border border-secondary/50 rounded-full transition-all duration-300 hover:scale-105 active:scale-95"
+                            className="group relative px-12 py-6 bg-secondary/20 hover:bg-secondary/30 border border-secondary/50 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 animate-pulse"
                         >
                             <div className="absolute inset-0 rounded-full blur-md bg-secondary/40 group-hover:bg-secondary/60 transition-all" />
                             <div className="relative flex items-center gap-3 text-2xl font-bold text-white uppercase tracking-widest">
