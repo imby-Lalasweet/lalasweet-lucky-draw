@@ -85,9 +85,9 @@ export const LuckyDraw: React.FC = () => {
         // Slow down effect
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
-        let currentSpeed = 30;
-        const maxSpeed = 1000; // Slowest speed before stop
-        const steps = 20; // More steps for more tension
+        let currentSpeed = 50;
+        const maxSpeed = 800; // Longer duration
+        const steps = 18; // Increased for 2x duration
         let stepCount = 0;
 
         const slowDown = () => {
@@ -99,7 +99,7 @@ export const LuckyDraw: React.FC = () => {
             increaseTension();
 
             stepCount++;
-            currentSpeed *= 1.25; // Exponential slow down
+            currentSpeed *= 1.27; // Slower increase for longer tension
 
             // Change animation as we slow down
             if (stepCount % 3 === 0) {
