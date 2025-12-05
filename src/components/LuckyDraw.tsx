@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { NumberDisplay, animationClasses } from './NumberDisplay';
 import confetti from 'canvas-confetti';
 import { Trophy, RefreshCw, Play, Square } from 'lucide-react';
-import { playTickSound, playWinSound, increaseTension, resetTension } from '@/utils/sound';
+import { playClickSound, playBGM, stopBGM, playStopSound, initAudio } from '@/utils/sound';
 
 const MIN_NUMBER = 1;
 const MAX_NUMBER = 100;
@@ -20,7 +20,6 @@ export const LuckyDraw: React.FC = () => {
     const animationRef = useRef<number | null>(null);
     const speedRef = useRef<number>(50); // Interval in ms
     const lastUpdateRef = useRef<number>(0);
-    const tensionRef = useRef<number>(0);
 
     const generateRandomNumber = () => {
         return Math.floor(Math.random() * (MAX_NUMBER - MIN_NUMBER + 1)) + MIN_NUMBER;
@@ -43,8 +42,8 @@ export const LuckyDraw: React.FC = () => {
         setTargetNumber(null);
         setScreenShake(true);
         speedRef.current = 30; // Start faster
-        tensionRef.current = 0;
-        resetTension();
+
+        playBGM();
 
         // Pick a random animation for this spin
         setCurrentAnimation(getRandomAnimation());
@@ -52,13 +51,6 @@ export const LuckyDraw: React.FC = () => {
         const animate = (time: number) => {
             if (time - lastUpdateRef.current > speedRef.current) {
                 setCurrentNumber(generateRandomNumber());
-
-                // Calculate intensity (0 to 1)
-                tensionRef.current += 0.01;
-                const intensity = Math.min(tensionRef.current, 1);
-
-                playTickSound(intensity);
-                increaseTension();
                 lastUpdateRef.current = time;
 
                 // Change animation occasionally for variety
@@ -82,6 +74,10 @@ export const LuckyDraw: React.FC = () => {
 
         setTargetNumber(winner);
 
+        // Stop BGM and play stop sound immediately
+        stopBGM();
+        playStopSound();
+
         // Slow down effect
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
 
@@ -92,11 +88,6 @@ export const LuckyDraw: React.FC = () => {
 
         const slowDown = () => {
             setCurrentNumber(generateRandomNumber());
-
-            // Calculate intensity (increases as we slow down)
-            const intensity = Math.min(stepCount / steps * 2, 2);
-            playTickSound(intensity);
-            increaseTension();
 
             stepCount++;
             currentSpeed *= 1.27; // Slower increase for longer tension
@@ -113,8 +104,6 @@ export const LuckyDraw: React.FC = () => {
                 setScreenShake(false);
                 setWinners(prev => [winner, ...prev]);
                 triggerConfetti();
-                playWinSound();
-                resetTension();
             } else {
                 setTimeout(slowDown, currentSpeed);
             }
@@ -159,7 +148,7 @@ export const LuckyDraw: React.FC = () => {
             setCurrentNumber(null);
             setIsSpinning(false);
             setScreenShake(false);
-            resetTension();
+            stopBGM(); // Ensure sound stops on reset
         }
     };
 
@@ -202,7 +191,7 @@ export const LuckyDraw: React.FC = () => {
                 <div className="flex gap-6 mt-12">
                     {!isSpinning ? (
                         <button
-                            onClick={spin}
+                            onClick={() => { initAudio(); playClickSound(); spin(); }}
                             className="group relative px-12 py-6 bg-primary/20 hover:bg-primary/30 border border-primary/50 rounded-full transition-all duration-300 hover:scale-105 active:scale-95"
                         >
                             <div className="absolute inset-0 rounded-full blur-md bg-primary/40 group-hover:bg-primary/60 transition-all" />
@@ -212,7 +201,7 @@ export const LuckyDraw: React.FC = () => {
                         </button>
                     ) : (
                         <button
-                            onClick={stop}
+                            onClick={() => { playClickSound(); stop(); }}
                             className="group relative px-12 py-6 bg-secondary/20 hover:bg-secondary/30 border border-secondary/50 rounded-full transition-all duration-300 hover:scale-105 active:scale-95 animate-pulse"
                         >
                             <div className="absolute inset-0 rounded-full blur-md bg-secondary/40 group-hover:bg-secondary/60 transition-all" />
@@ -227,7 +216,7 @@ export const LuckyDraw: React.FC = () => {
             {/* Footer Controls */}
             <div className="absolute bottom-8 right-8">
                 <button
-                    onClick={reset}
+                    onClick={() => { playClickSound(); reset(); }}
                     className="p-3 text-white/30 hover:text-white/80 transition-colors"
                     title="Reset History"
                 >

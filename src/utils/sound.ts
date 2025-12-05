@@ -1,63 +1,113 @@
-let tickPitch = 800; // Starting pitch
+let audioContext: AudioContext | null = null;
+const soundBuffers: { [key: string]: AudioBuffer | null } = {
+    bgm: null,
+    stop: null,
+};
+let bgmSource: AudioBufferSourceNode | null = null;
 
-export const playTickSound = (intensity: number = 1) => {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
-
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    // Increase pitch based on intensity for tension
-    const pitch = tickPitch + (intensity * 200);
-
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(pitch, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
-
-    gain.gain.setValueAtTime(0.15 * intensity, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start();
-    osc.stop(ctx.currentTime + 0.05);
+// Helper to get or create AudioContext
+const getAudioContext = () => {
+    if (!audioContext) {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContext) {
+            audioContext = new AudioContext();
+        }
+    }
+    return audioContext;
 };
 
-export const playWinSound = () => {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
+const loadSound = async (url: string): Promise<AudioBuffer | null> => {
+    const ctx = getAudioContext();
+    if (!ctx) return null;
 
-    const ctx = new AudioContext();
-
-    // Arpeggio with more dramatic effect
-    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C Major + high E
-    notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
-
-        gain.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.08);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.08 + 0.6);
-
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-
-        osc.start(ctx.currentTime + i * 0.08);
-        osc.stop(ctx.currentTime + i * 0.08 + 0.6);
-    });
-
-    // Reset tick pitch
-    tickPitch = 800;
+    try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        return await ctx.decodeAudioData(arrayBuffer);
+    } catch (error) {
+        console.error(`Failed to load sound from ${url}:`, error);
+        return null;
+    }
 };
 
-export const increaseTension = () => {
-    tickPitch = Math.min(tickPitch + 50, 1500);
+// Initialize audio context and preload sounds
+export const initAudio = async () => {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === 'suspended') {
+        await ctx.resume();
+    }
+
+    if (!soundBuffers.bgm) {
+        soundBuffers.bgm = await loadSound('/sounds/D.wav');
+    }
+    if (!soundBuffers.stop) {
+        soundBuffers.stop = await loadSound('/sounds/F.wav');
+    }
 };
 
-export const resetTension = () => {
-    tickPitch = 800;
+export const playBGM = () => {
+    const ctx = getAudioContext();
+    if (!ctx || !soundBuffers.bgm) return;
+
+    // Stop existing BGM if any
+    if (bgmSource) {
+        try {
+            bgmSource.stop();
+        } catch (e) {
+            // Ignore if already stopped
+        }
+    }
+
+    bgmSource = ctx.createBufferSource();
+    bgmSource.buffer = soundBuffers.bgm;
+    bgmSource.loop = true;
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = 0.5; // Adjust volume as needed
+
+    bgmSource.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    bgmSource.start(0);
 };
+
+export const stopBGM = () => {
+    if (bgmSource) {
+        try {
+            bgmSource.stop();
+        } catch (e) {
+            // Ignore
+        }
+        bgmSource = null;
+    }
+};
+
+export const playStopSound = () => {
+    const ctx = getAudioContext();
+    if (!ctx || !soundBuffers.stop) return;
+
+    // Stop BGM just in case it wasn't stopped
+    stopBGM();
+
+    const source = ctx.createBufferSource();
+    source.buffer = soundBuffers.stop;
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = 0.8;
+
+    source.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    source.start(0);
+};
+
+export const playClickSound = () => {
+    // Optional: Add a specific click sound if needed
+};
+
+// Deprecated functions kept to avoid breaking imports immediately, but should be removed from usage
+export const playSlotSound = (intensity: number = 1) => { };
+export const playJingSound = () => { };
+export const increaseTension = () => { };
+export const resetTension = () => { };
+
