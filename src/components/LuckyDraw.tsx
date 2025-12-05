@@ -7,7 +7,7 @@ import { Trophy, RefreshCw, Play, Square } from 'lucide-react';
 import { playClickSound, playBGM, stopBGM, playStopSound, initAudio } from '@/utils/sound';
 
 const MIN_NUMBER = 1;
-const MAX_NUMBER = 100;
+const MAX_NUMBER = 99;
 
 export const LuckyDraw: React.FC = () => {
     const [currentNumber, setCurrentNumber] = useState<number | null>(null);
