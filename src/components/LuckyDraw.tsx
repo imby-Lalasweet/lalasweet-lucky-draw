@@ -193,7 +193,7 @@ export const LuckyDraw: React.FC = () => {
                 <div className="flex gap-6 mt-12">
                     {!isSpinning ? (
                         <button
-                            onClick={() => { initAudio(); playClickSound(); spin(); }}
+                            onClick={async () => { await initAudio(); playClickSound(); spin(); }}
                             className="group relative px-12 py-6 bg-primary/20 hover:bg-primary/30 border border-primary/50 rounded-full transition-all duration-300 hover:scale-105 active:scale-95"
                         >
                             <div className="absolute inset-0 rounded-full blur-md bg-primary/40 group-hover:bg-primary/60 transition-all" />
