@@ -77,10 +77,10 @@ export const LuckyDraw: React.FC = () => {
         // Stop BGM immediately
         stopBGM();
 
-        // Play stop sound after 2.3 seconds
+        // Play stop sound after 2.7 seconds
         setTimeout(() => {
             playStopSound();
-        }, 2300);
+        }, 2700);
 
         // Slow down effect
         if (animationRef.current) cancelAnimationFrame(animationRef.current);
