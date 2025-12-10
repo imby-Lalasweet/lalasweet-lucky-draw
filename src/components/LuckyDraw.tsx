@@ -33,12 +33,13 @@ const buttonColors: Record<DrawType, { bg: string; border: string; glow: string 
     30: { bg: 'bg-purple-500/20 hover:bg-purple-500/30', border: 'border-purple-500/50', glow: 'bg-purple-500/40' },
 };
 
-// Animation timing for each draw type (total ~40 seconds)
+// Animation timing for each draw type
+// 13: 40s total (~3s per number), 15: 40s total (~2.6s per number), 30: 90s total (3s per number)
 const drawTiming: Record<DrawType, { spinTime: number; slowDownTime: number; displayTime: number }> = {
     1: { spinTime: 0, slowDownTime: 0, displayTime: 0 }, // Manual stop
-    13: { spinTime: 2000, slowDownTime: 500, displayTime: 500 }, // ~3s per number
-    15: { spinTime: 1600, slowDownTime: 500, displayTime: 500 }, // ~2.6s per number
-    30: { spinTime: 600, slowDownTime: 400, displayTime: 300 }, // ~1.3s per number
+    13: { spinTime: 1800, slowDownTime: 600, displayTime: 700 }, // ~3s per number, 40s total
+    15: { spinTime: 1400, slowDownTime: 500, displayTime: 700 }, // ~2.6s per number, 40s total
+    30: { spinTime: 1800, slowDownTime: 500, displayTime: 700 }, // 3s per number, 90s total
 };
 
 export const LuckyDraw: React.FC = () => {
@@ -52,6 +53,7 @@ export const LuckyDraw: React.FC = () => {
     const [multiDrawWinners, setMultiDrawWinners] = useState<number[]>([]);
     const [showResults, setShowResults] = useState(false);
     const [currentDrawIndex, setCurrentDrawIndex] = useState(0);
+    const [lastDrawnNumber, setLastDrawnNumber] = useState<number | null>(null);
 
     const animationRef = useRef<number | null>(null);
     const speedRef = useRef<number>(50);
@@ -191,6 +193,7 @@ export const LuckyDraw: React.FC = () => {
         setScreenShake(true);
         setMultiDrawWinners([]);
         setCurrentDrawIndex(0);
+        setLastDrawnNumber(null);
 
         await initAudio();
         playBGM();
@@ -231,6 +234,7 @@ export const LuckyDraw: React.FC = () => {
 
             // Show winner
             setCurrentNumber(winner);
+            setLastDrawnNumber(winner);
             playStopSound();
 
             // Brief display before next
@@ -242,6 +246,7 @@ export const LuckyDraw: React.FC = () => {
         setIsSpinning(false);
         setScreenShake(false);
         setMultiDrawWinners(drawnWinners);
+        setLastDrawnNumber(null);
 
         // Add all winners to history
         const newWinners = drawnWinners.map(n => ({ number: n, drawType }));
@@ -290,6 +295,7 @@ export const LuckyDraw: React.FC = () => {
             setScreenShake(false);
             setShowResults(false);
             setMultiDrawWinners([]);
+            setLastDrawnNumber(null);
             stopBGM();
         }
     };
@@ -341,6 +347,18 @@ export const LuckyDraw: React.FC = () => {
                 {isSpinning && currentDrawType !== 1 && (
                     <div className="mb-4 text-white/60 text-lg">
                         Drawing {currentDrawIndex} / {currentDrawType}
+                    </div>
+                )}
+
+                {/* Previous drawn number display (50% size) for multi-draw */}
+                {isSpinning && currentDrawType !== 1 && lastDrawnNumber !== null && (
+                    <div className="mb-2 text-center animate-in fade-in duration-300">
+                        <div className="text-[7.5rem] font-bold tabular-nums leading-none text-accent text-glow-gold opacity-70">
+                            {lastDrawnNumber}
+                        </div>
+                        <div className="text-white/40 text-sm mt-1">
+                            #{currentDrawIndex - 1} Winner
+                        </div>
                     </div>
                 )}
 
