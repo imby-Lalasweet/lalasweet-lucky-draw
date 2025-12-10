@@ -34,12 +34,12 @@ const buttonColors: Record<DrawType, { bg: string; border: string; glow: string 
 };
 
 // Animation timing for each draw type
-// 13: 40s total (~3s per number), 15: 40s total (~2.6s per number), 30: 90s total (3s per number)
+// 13: 40s total (~3s per number), 15: 40s total (~2.6s per number), 30: 40s total (~1.3s per number)
 const drawTiming: Record<DrawType, { spinTime: number; slowDownTime: number; displayTime: number }> = {
     1: { spinTime: 0, slowDownTime: 0, displayTime: 0 }, // Manual stop
     13: { spinTime: 1800, slowDownTime: 600, displayTime: 700 }, // ~3s per number, 40s total
     15: { spinTime: 1400, slowDownTime: 500, displayTime: 700 }, // ~2.6s per number, 40s total
-    30: { spinTime: 1800, slowDownTime: 500, displayTime: 700 }, // 3s per number, 90s total
+    30: { spinTime: 600, slowDownTime: 400, displayTime: 333 }, // ~1.3s per number, 40s total
 };
 
 export const LuckyDraw: React.FC = () => {
