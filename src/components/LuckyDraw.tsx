@@ -20,6 +20,39 @@ export const LuckyDraw: React.FC = () => {
     const animationRef = useRef<number | null>(null);
     const speedRef = useRef<number>(50); // Interval in ms
     const lastUpdateRef = useRef<number>(0);
+    const shuffledNumbersRef = useRef<number[]>([]);
+    const shuffleIndexRef = useRef<number>(0);
+
+    // Fisher-Yates shuffle algorithm
+    const shuffleArray = (array: number[]) => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
+
+    // Initialize shuffled numbers array
+    const initShuffledNumbers = () => {
+        const numbers = Array.from({ length: MAX_NUMBER - MIN_NUMBER + 1 }, (_, i) => i + MIN_NUMBER);
+        shuffledNumbersRef.current = shuffleArray(numbers);
+        shuffleIndexRef.current = 0;
+    };
+
+    // Get next number from shuffled array (cycles through all numbers)
+    const getNextDisplayNumber = () => {
+        if (shuffledNumbersRef.current.length === 0) {
+            initShuffledNumbers();
+        }
+        const num = shuffledNumbersRef.current[shuffleIndexRef.current];
+        shuffleIndexRef.current = (shuffleIndexRef.current + 1) % shuffledNumbersRef.current.length;
+        // Reshuffle when we've gone through all numbers
+        if (shuffleIndexRef.current === 0) {
+            shuffledNumbersRef.current = shuffleArray(shuffledNumbersRef.current);
+        }
+        return num;
+    };
 
     const generateRandomNumber = () => {
         return Math.floor(Math.random() * (MAX_NUMBER - MIN_NUMBER + 1)) + MIN_NUMBER;
@@ -43,6 +76,9 @@ export const LuckyDraw: React.FC = () => {
         setScreenShake(true);
         speedRef.current = 30; // Start faster
 
+        // Initialize shuffled numbers for display
+        initShuffledNumbers();
+
         playBGM();
 
         // Pick a random animation for this spin
@@ -50,7 +86,7 @@ export const LuckyDraw: React.FC = () => {
 
         const animate = (time: number) => {
             if (time - lastUpdateRef.current > speedRef.current) {
-                setCurrentNumber(generateRandomNumber());
+                setCurrentNumber(getNextDisplayNumber());
                 lastUpdateRef.current = time;
 
                 // Change animation occasionally for variety
@@ -88,7 +124,7 @@ export const LuckyDraw: React.FC = () => {
         let stepCount = 0;
 
         const slowDown = () => {
-            setCurrentNumber(generateRandomNumber());
+            setCurrentNumber(getNextDisplayNumber());
 
             stepCount++;
             currentSpeed *= 1.27; // Slower increase for longer tension
